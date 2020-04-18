@@ -13,7 +13,6 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->topicEdit->setText(TOPIC);
         QObject::connect(this, SIGNAL(messageSignal(QString)),
                          this, SLOT(on_MQTTmessage(QString)));
-        connect(this, SIGNAL(mouseMove(QMouseEvent*)), this,SLOT(showPointToolTip(QMouseEvent*)));
         ::handle = this;
 
 }
@@ -183,36 +182,3 @@ void MainWindow::on_topicEdit_editingFinished()
     ui->topicEdit->setPalette(pal);
 }
 
-bool MainWindow::eventFilter(QObject *target, QEvent *event)
-{
-
-if(target == ui->customPlot && event->type() == QEvent::MouseButtonPress &&
-            ui->customPlot->selectedGraphs().size() > 0)
-    {
-        QMouseEvent *_mouseEvent = static_cast<QMouseEvent*>(event);
-        // find a data point's value at closest coordinate to mouse click
-        double xCoord = ui->customPlot->xAxis->pixelToCoord(_mouseEvent->pos().x());
-        double yCoord = ui->customPlot->yAxis->pixelToCoord(_mouseEvent->pos().y());
-
-        // works but has an issue:
-        // if the first click after graph selection was on the graph, the second click will be incorrect
-        // must click on the plot point twice
-
-        // this is absolute magic to me... http://www.qmyPlot.com/documentation/dataselection.html#dataselection-accessing
-        QCPDataSelection selection = ui->customPlot->selectedGraphs().front()->selection();
-        foreach (QCPDataRange dataRange, selection.dataRanges())
-        {
-            QCPGraphDataContainer::const_iterator begin = ui->customPlot->selectedGraphs().front()->data()->at(dataRange.begin()); // get range begin iterator from index
-            QCPGraphDataContainer::const_iterator end = ui->customPlot->selectedGraphs().front()->data()->at(dataRange.end()); // get range end iterator from index
-            int i = 0;
-            for (QCPGraphDataContainer::const_iterator it=begin; it!=end; ++it)
-            {
-              // iterator "it" will go through all selected data points
-              qDebug("Value closest to (%f,%f) on graph: %f", xCoord, yCoord, it->value);
-            i++;
-            }
-        }
-    }
-
-    return false;
-}
