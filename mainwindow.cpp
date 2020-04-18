@@ -10,30 +10,10 @@ MainWindow::MainWindow(QWidget *parent) :
         this->timeData="00:00:00";
         this->setWindowTitle("EE513 Assignment 2");
         setGraph();
-/*
-    QStringListModel * model = new QStringListModel;
-
-        for (int x = 0; x < 1000; x++)
-        {
-            model->insertRow(model->rowCount());
-            model->setData(model->index(model->rowCount() - 1, 0), QString("hello%1").arg(x), Qt::DisplayRole);
-        }
-
-
-
-        QSortFilterProxyModel * proxy = new QSortFilterProxyModel;
-        proxy->setSourceModel(model);
-
-        this->ui->comboBox->setModel(proxy);
-        this->ui->comboBox->setEditable(true);
-        this->ui->comboBox->setCompleter(0);
-
-        // When the edit text changes, use it to filter the proxy model.
-        connect(this->ui->comboBox, SIGNAL(editTextChanged(QString)), proxy, SLOT(setFilterWildcard(QString)));*/
-    //this->ui->customPlot->replot(); this->ui->comboBox->setEditable(true);
         ui->topicEdit->setText(TOPIC);
         QObject::connect(this, SIGNAL(messageSignal(QString)),
                          this, SLOT(on_MQTTmessage(QString)));
+        connect(this, SIGNAL(mouseMove(QMouseEvent*)), this,SLOT(showPointToolTip(QMouseEvent*)));
         ::handle = this;
 
 }
@@ -90,7 +70,14 @@ void MainWindow::update(){
 
 
 void MainWindow::on_connectButton_clicked()
-{
+{   if(ui->topicEdit->text()==""){
+        ui->topicEdit->setFocus(Qt::FocusReason::OtherFocusReason);
+        QPalette pal = ui->topicEdit->palette();
+        pal.setColor(QPalette::Text,Qt::red);
+        ui->topicEdit->setPalette(pal);
+        ui->topicEdit->setText("Please fill this section");
+    }
+    else{
     MQTTClient_connectOptions opts = MQTTClient_connectOptions_initializer;
     int rc;this->yData = 0.00;
     MQTTClient_create(&client, ADDRESS, CLIENTID, MQTTCLIENT_PERSISTENCE_NONE, NULL);
@@ -105,9 +92,10 @@ void MainWindow::on_connectButton_clicked()
     if ((rc = MQTTClient_connect(client, &opts)) != MQTTCLIENT_SUCCESS) {
         ui->outputText->appendPlainText(QString("Failed to connect, return code %1").arg(rc));
     }
-    ui->outputText->appendPlainText(QString("Subscribing to topic " TOPIC " for client " CLIENTID));
+    ui->outputText->appendPlainText(QString("Subscribing to topic %1 for client " CLIENTID).arg(ui->topicEdit->text()));
     int x = MQTTClient_subscribe(client, ui->topicEdit->text().toLatin1().data(), QOS);
     ui->outputText->appendPlainText(QString("Result of subscribe is %1 (0=success)").arg(x));
+    }
 }
 
 void delivered(void *context, MQTTClient_deliveryToken dt) {
@@ -185,4 +173,46 @@ void MainWindow::on_comboBox_currentTextChanged(const QString &arg1)
     this->flag=0;
     this->ui->customPlot->graph(0)->data().data()->clear();
     this->setGraph();
+}
+
+void MainWindow::on_topicEdit_editingFinished()
+{
+    ui->topicEdit->setFocus(Qt::FocusReason::OtherFocusReason);
+    QPalette pal = ui->topicEdit->palette();
+    pal.setColor(QPalette::Text,Qt::black);
+    ui->topicEdit->setPalette(pal);
+}
+
+bool MainWindow::eventFilter(QObject *target, QEvent *event)
+{
+
+if(target == ui->customPlot && event->type() == QEvent::MouseButtonPress &&
+            ui->customPlot->selectedGraphs().size() > 0)
+    {
+        QMouseEvent *_mouseEvent = static_cast<QMouseEvent*>(event);
+        // find a data point's value at closest coordinate to mouse click
+        double xCoord = ui->customPlot->xAxis->pixelToCoord(_mouseEvent->pos().x());
+        double yCoord = ui->customPlot->yAxis->pixelToCoord(_mouseEvent->pos().y());
+
+        // works but has an issue:
+        // if the first click after graph selection was on the graph, the second click will be incorrect
+        // must click on the plot point twice
+
+        // this is absolute magic to me... http://www.qmyPlot.com/documentation/dataselection.html#dataselection-accessing
+        QCPDataSelection selection = ui->customPlot->selectedGraphs().front()->selection();
+        foreach (QCPDataRange dataRange, selection.dataRanges())
+        {
+            QCPGraphDataContainer::const_iterator begin = ui->customPlot->selectedGraphs().front()->data()->at(dataRange.begin()); // get range begin iterator from index
+            QCPGraphDataContainer::const_iterator end = ui->customPlot->selectedGraphs().front()->data()->at(dataRange.end()); // get range end iterator from index
+            int i = 0;
+            for (QCPGraphDataContainer::const_iterator it=begin; it!=end; ++it)
+            {
+              // iterator "it" will go through all selected data points
+              qDebug("Value closest to (%f,%f) on graph: %f", xCoord, yCoord, it->value);
+            i++;
+            }
+        }
+    }
+
+    return false;
 }

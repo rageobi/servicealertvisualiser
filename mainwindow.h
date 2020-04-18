@@ -28,8 +28,8 @@ private slots:
     void on_connectButton_clicked();
     void on_disconnectButton_clicked();
     void on_MQTTmessage(QString message);
-
     void on_comboBox_currentTextChanged(const QString &arg1);
+    void on_topicEdit_editingFinished();
 
 signals:
     void messageSignal(QString message);
