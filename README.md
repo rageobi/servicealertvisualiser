@@ -17,11 +17,14 @@ A simple QT application which takes and visualises the data from the Service Ale
 
 ### - Manually subscribing to topics
 Manual subscription to topics is given through QLineEdit, and hence making it easier for users to change to subscription narrowing down to the sub-topic or opting for a wildcard. The default being the wild card. There are validations been made to ensure this is not left blank.
+
 ![](https://i.ibb.co/CsVpGcv/Annotation-2020-05-20-032154.png)
+
 ![](https://i.ibb.co/FgHtkVV/Annotation-2020-05-20-2.png)
 
 ### - Subject based filtering
 Subject based filtering is done through QComboBox or the dropdown, whereby user can select the data to be plotted against time (Temperature, pitch or roll). 
+
 ![](https://i.ibb.co/C98bzk4/Annotation-2020-05-20-3.png)
 
 ### - Parsing JSON and plotting data in with respect to time
@@ -29,6 +32,7 @@ Code implementation for parsing json has been discussed in the previous section.
 ability to zoom horizontally along the time axis or drag vertically based on subject selected.
 
 ![](https://i.ibb.co/Qm4PWZL/Annotation-2020-05-20-4.png)
+
 ![](https://i.ibb.co/Mk0s8Gv/Annotation-2020-05-20-5.png)
 
 
